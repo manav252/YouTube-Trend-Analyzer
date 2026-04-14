@@ -12,7 +12,7 @@ st.title("📊 YouTube Trending Dashboard (India)")
 @st.cache_data
 def load_data():
     # Read CSV (must be in same folder)
-    df = pd.read_csv("/Users/manavdoshi/INvideos.csv")
+    df = pd.read_csv("INvideos_small.csv")
 
     # Preprocessing
     df["publish_time"] = pd.to_datetime(df["publish_time"])
