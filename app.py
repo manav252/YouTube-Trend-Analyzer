@@ -11,8 +11,10 @@ st.title("📊 YouTube Trending Dashboard (India)")
 # ------------------ LOAD DATA ------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("/Users/manavdoshi/INvideos.csv")
+   import zipfile
 
+with zipfile.ZipFile("INvideos.csv.zip") as z:
+    df = pd.read_csv(z.open("INvideos.csv"))
     df["publish_time"] = pd.to_datetime(df["publish_time"])
     df["publishing_hour"] = df["publish_time"].dt.hour
     df["publishing_day"] = df["publish_time"].dt.day_name()
