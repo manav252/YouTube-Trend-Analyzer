@@ -12,10 +12,14 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import seaborn as sns
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_ROOT / "data"
 
 """CSV FILE READ"""
 
-df = pd.read_csv('INvideos.csv')
+df = pd.read_csv(DATA_DIR / "INvideos_small.csv")
 
 df.head()
 
@@ -208,7 +212,7 @@ plt.show()
 
 import json
 
-with open("IN_category_id.json") as file:
+with open(DATA_DIR / "IN_category_id.json") as file:
     data = json.load(file)
 
 cat_dict = {int(item["id"]): item["snippet"]["title"] for item in data["items"]}
