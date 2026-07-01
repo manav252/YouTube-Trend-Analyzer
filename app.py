@@ -117,7 +117,7 @@ with overview_tab:
             },
         )
         fig_category.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig_category, use_container_width=True)
+        st.plotly_chart(fig_category, width="stretch")
 
     with right_col:
         st.subheader("Views Distribution")
@@ -129,7 +129,7 @@ with overview_tab:
             labels={"views": "Views", "count": "Video count"},
             title="Log-scaled distribution highlights the long-tail of viral videos",
         )
-        st.plotly_chart(fig_views, use_container_width=True)
+        st.plotly_chart(fig_views, width="stretch")
 
     st.subheader("Top Channels by Trending Count")
     top_channels = (
@@ -152,7 +152,7 @@ with overview_tab:
         },
     )
     fig_channels.update_layout(yaxis={"categoryorder": "total ascending"})
-    st.plotly_chart(fig_channels, use_container_width=True)
+    st.plotly_chart(fig_channels, width="stretch")
 
 with behavior_tab:
     left_col, right_col = st.columns(2)
@@ -181,7 +181,7 @@ with behavior_tab:
             },
         )
         fig_engagement.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig_engagement, use_container_width=True)
+        st.plotly_chart(fig_engagement, width="stretch")
 
     with right_col:
         st.subheader("Publish Hour vs Views and Engagement")
@@ -203,7 +203,7 @@ with behavior_tab:
             },
         )
         fig_hour.update_xaxes(dtick=1)
-        st.plotly_chart(fig_hour, use_container_width=True)
+        st.plotly_chart(fig_hour, width="stretch")
 
     st.subheader("Correlation Heatmap")
     correlation_columns = [
@@ -226,7 +226,7 @@ with behavior_tab:
         zmin=-1,
         zmax=1,
     )
-    st.plotly_chart(fig_corr, use_container_width=True)
+    st.plotly_chart(fig_corr, width="stretch")
 
 with ml_tab:
     st.subheader("High Engagement Prediction")
@@ -241,7 +241,7 @@ with ml_tab:
     for column in ["accuracy", "precision", "recall", "f1_score"]:
         metric_table[column] = metric_table[column].map(lambda value: f"{value:.3f}")
 
-    st.dataframe(metric_table, use_container_width=True, hide_index=True)
+    st.dataframe(metric_table, width="stretch", hide_index=True)
     st.caption(
         f"Training rows: {model_results['train_rows']:,} | "
         f"Testing rows: {model_results['test_rows']:,}"
@@ -262,7 +262,7 @@ with ml_tab:
             color_continuous_scale="Blues",
             aspect="auto",
         )
-        st.plotly_chart(fig_confusion, use_container_width=True)
+        st.plotly_chart(fig_confusion, width="stretch")
 
     with right_col:
         st.subheader("Random Forest Feature Importance")
@@ -275,7 +275,7 @@ with ml_tab:
             color_continuous_scale="Greens",
         )
         fig_importance.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig_importance, use_container_width=True)
+        st.plotly_chart(fig_importance, width="stretch")
 
 with data_tab:
     st.subheader("Top Trending Videos")
@@ -294,9 +294,9 @@ with data_tab:
                 "publish_hour",
             ]
         ],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
     with st.expander("Show cleaned dataset"):
-        st.dataframe(filtered_df, use_container_width=True)
+        st.dataframe(filtered_df, width="stretch")
