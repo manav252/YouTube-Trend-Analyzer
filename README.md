@@ -1,5 +1,14 @@
 # YouTube Trending Video Analytics & Engagement Classification
 
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458)
+![NumPy](https://img.shields.io/badge/NumPy-Numerical%20Computing-013243)
+![Scikit--Learn](https://img.shields.io/badge/Scikit--Learn-ML-F7931E)
+![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B)
+![SQL](https://img.shields.io/badge/SQL-Analytics-4479A1)
+![Power%20BI](https://img.shields.io/badge/Power%20BI-Ready-F2C811)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 ## Problem Statement
 
 YouTube trending videos generate large amounts of engagement data, but raw metrics alone do not explain why some videos perform better than others. This project analyzes Indian YouTube trending videos to identify patterns across categories, publishing time, views, likes, comments, and engagement rates. It also includes a machine learning section that classifies whether an already-trending video has high engagement compared with the dataset median.
@@ -92,14 +101,33 @@ Metrics shown in the app:
 ├── data/
 │   ├── IN_category_id.json
 │   └── INvideos_small.csv
+├── docs/
+│   ├── architecture.md
+│   ├── findings.md
+│   └── methodology.md
 ├── notebooks/
 │   └── youtube_trend_analyser.py
 ├── reports/
+│   ├── model_evaluation.md
+│   ├── powerbi_dashboard_plan.md
+│   ├── powerbi_dax_measures.md
+│   └── youtube_powerbi_ready_cleaned.csv
 ├── screenshots/
 ├── src/
 │   ├── __init__.py
 │   ├── data_processing.py
-│   └── ml_model.py
+│   ├── feature_engineering.py
+│   ├── ml_model.py
+│   ├── modeling.py
+│   ├── utils.py
+│   └── visualization.py
+├── tests/
+│   ├── test_app_import.py
+│   ├── test_data_processing.py
+│   └── test_modeling.py
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
 ├── requirements.txt
 └── README.md
 ```

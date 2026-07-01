@@ -4,3 +4,7 @@ __pycache__/
 .venv/
 venv/
 .streamlit/
+.env
+.pytest_cache/
+README 2.md
+app 2.py

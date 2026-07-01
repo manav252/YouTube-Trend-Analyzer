@@ -141,7 +141,7 @@ with overview_tab:
             },
         )
         fig_category.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig_category, width="stretch")
+        st.plotly_chart(fig_category, use_container_width=True)
 
     with right_col:
         st.subheader("Views Distribution")
@@ -153,7 +153,7 @@ with overview_tab:
             labels={"views": "Views", "count": "Video count"},
             title="Log-scaled distribution highlights the long-tail of viral videos",
         )
-        st.plotly_chart(fig_views, width="stretch")
+        st.plotly_chart(fig_views, use_container_width=True)
 
     st.subheader("Top Channels by Trending Count")
     top_channels = (
@@ -176,7 +176,7 @@ with overview_tab:
         },
     )
     fig_channels.update_layout(yaxis={"categoryorder": "total ascending"})
-    st.plotly_chart(fig_channels, width="stretch")
+    st.plotly_chart(fig_channels, use_container_width=True)
 
 with behavior_tab:
     left_col, right_col = st.columns(2)
@@ -205,7 +205,7 @@ with behavior_tab:
             },
         )
         fig_engagement.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig_engagement, width="stretch")
+        st.plotly_chart(fig_engagement, use_container_width=True)
 
     with right_col:
         st.subheader("Publish Hour vs Views and Engagement")
@@ -227,7 +227,7 @@ with behavior_tab:
             },
         )
         fig_hour.update_xaxes(dtick=1)
-        st.plotly_chart(fig_hour, width="stretch")
+        st.plotly_chart(fig_hour, use_container_width=True)
 
     st.subheader("Correlation Heatmap")
     correlation_columns = [
@@ -250,7 +250,7 @@ with behavior_tab:
         zmin=-1,
         zmax=1,
     )
-    st.plotly_chart(fig_corr, width="stretch")
+    st.plotly_chart(fig_corr, use_container_width=True)
 
 with engagement_insights_tab:
     st.subheader("Engagement Insights")
@@ -291,7 +291,7 @@ with engagement_insights_tab:
         fig_engagement_rate_category.update_layout(
             yaxis={"categoryorder": "total ascending"}
         )
-        st.plotly_chart(fig_engagement_rate_category, width="stretch")
+        st.plotly_chart(fig_engagement_rate_category, use_container_width=True)
 
     with insight_col_2:
         st.subheader("Like Ratio by Category")
@@ -310,7 +310,7 @@ with engagement_insights_tab:
             },
         )
         fig_like_ratio_category.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig_like_ratio_category, width="stretch")
+        st.plotly_chart(fig_like_ratio_category, use_container_width=True)
 
     insight_col_3, insight_col_4 = st.columns(2)
 
@@ -333,7 +333,7 @@ with engagement_insights_tab:
         fig_comment_ratio_category.update_layout(
             yaxis={"categoryorder": "total ascending"}
         )
-        st.plotly_chart(fig_comment_ratio_category, width="stretch")
+        st.plotly_chart(fig_comment_ratio_category, use_container_width=True)
 
     with insight_col_4:
         st.subheader("Publish Hour vs Engagement Rate")
@@ -357,7 +357,7 @@ with engagement_insights_tab:
             hover_data=["trending_videos"],
         )
         fig_hour_engagement.update_xaxes(dtick=1)
-        st.plotly_chart(fig_hour_engagement, width="stretch")
+        st.plotly_chart(fig_hour_engagement, use_container_width=True)
 
     st.subheader("Publish Day vs Engagement Rate")
     day_order = [
@@ -391,7 +391,7 @@ with engagement_insights_tab:
         },
         hover_data=["trending_videos"],
     )
-    st.plotly_chart(fig_day_engagement, width="stretch")
+    st.plotly_chart(fig_day_engagement, use_container_width=True)
 
 with ml_tab:
     st.subheader("High Engagement Classification")
@@ -412,7 +412,7 @@ with ml_tab:
         metric_table, ["accuracy", "precision", "recall", "f1_score", "roc_auc"]
     )
 
-    st.dataframe(metric_table, width="stretch", hide_index=True)
+    st.dataframe(metric_table, use_container_width=True, hide_index=True)
     st.caption(
         f"Training rows: {model_results['train_rows']:,} | "
         f"Testing rows: {model_results['test_rows']:,}"
@@ -433,7 +433,7 @@ with ml_tab:
             color_continuous_scale="Blues",
             aspect="auto",
         )
-        st.plotly_chart(fig_confusion, width="stretch")
+        st.plotly_chart(fig_confusion, use_container_width=True)
 
     with right_col:
         st.subheader("Random Forest Feature Importance")
@@ -446,7 +446,7 @@ with ml_tab:
             color_continuous_scale="Greens",
         )
         fig_importance.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig_importance, width="stretch")
+        st.plotly_chart(fig_importance, use_container_width=True)
 
 with ml_insights_tab:
     st.subheader("ML Model Insights")
@@ -477,7 +477,7 @@ with ml_insights_tab:
     )
 
     st.subheader("Logistic Regression vs Random Forest")
-    st.dataframe(model_comparison, width="stretch", hide_index=True)
+    st.dataframe(model_comparison, use_container_width=True, hide_index=True)
     st.caption(
         f"Training rows: {model_results['train_rows']:,} | "
         f"Testing rows: {model_results['test_rows']:,}"
@@ -499,7 +499,7 @@ with ml_insights_tab:
             aspect="auto",
             labels={"color": "Videos"},
         )
-        st.plotly_chart(fig_ml_confusion, width="stretch")
+        st.plotly_chart(fig_ml_confusion, use_container_width=True)
 
     with ml_col_2:
         st.subheader("ROC Curve")
@@ -523,7 +523,7 @@ with ml_insights_tab:
             line={"dash": "dash", "color": "gray"},
         )
         fig_roc.update_layout(legend_title_text="Model")
-        st.plotly_chart(fig_roc, width="stretch")
+        st.plotly_chart(fig_roc, use_container_width=True)
 
     st.subheader("Random Forest Feature Importance")
     fig_ml_importance = px.bar(
@@ -536,7 +536,7 @@ with ml_insights_tab:
         labels={"importance": "Importance", "feature": "Feature"},
     )
     fig_ml_importance.update_layout(yaxis={"categoryorder": "total ascending"})
-    st.plotly_chart(fig_ml_importance, width="stretch")
+    st.plotly_chart(fig_ml_importance, use_container_width=True)
 
 with data_tab:
     st.subheader("Top Trending Videos")
@@ -555,9 +555,9 @@ with data_tab:
                 "publish_hour",
             ]
         ],
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
     )
 
     with st.expander("Show cleaned dataset"):
-        st.dataframe(filtered_df, width="stretch")
+        st.dataframe(filtered_df, use_container_width=True)
