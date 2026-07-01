@@ -123,14 +123,13 @@ streamlit run app.py
 
 ## Screenshots
 
-Add screenshots of the final Streamlit dashboard in the `screenshots/` folder.
+Overview dashboard:
 
-Suggested screenshots:
+![Overview dashboard](screenshots/overview-dashboard.png)
 
-- Overview dashboard
-- Engagement patterns tab
-- ML prediction tab
-- Data preview tab
+Machine learning prediction tab:
+
+![ML prediction tab](screenshots/ml-prediction.png)
 
 ## Future Scope
 
