@@ -1,10 +1,12 @@
-# YouTube Trending Video Analytics & Engagement Prediction
+# YouTube Trending Video Analytics & Engagement Classification
 
 ## Problem Statement
 
-YouTube trending videos generate large amounts of engagement data, but raw metrics alone do not explain why some videos perform better than others. This project analyzes Indian YouTube trending videos to identify patterns across categories, publishing time, views, likes, comments, and engagement rates. It also includes a simple machine learning section that predicts whether a video is likely to receive high engagement.
+YouTube trending videos generate large amounts of engagement data, but raw metrics alone do not explain why some videos perform better than others. This project analyzes Indian YouTube trending videos to identify patterns across categories, publishing time, views, likes, comments, and engagement rates. It also includes a machine learning section that classifies whether an already-trending video has high engagement compared with the dataset median.
 
 The goal is to turn a raw Kaggle-style dataset into a clean, interactive Data Science portfolio project suitable for Master's applications.
+
+Important limitation: this dataset contains only videos that already became trending. The machine learning model does not predict whether a brand-new video will become trending. It is an engagement classification model for videos inside the trending dataset.
 
 ## Dataset Source
 
@@ -28,7 +30,7 @@ The project uses the India trending videos dataset from the public YouTube Trend
 3. Map `category_id` values to readable category names.
 4. Engineer engagement and time-based features.
 5. Build interactive Streamlit visualizations.
-6. Train Logistic Regression and Random Forest models.
+6. Train Logistic Regression and Random Forest models for high-engagement classification.
 7. Compare model metrics and show feature importance.
 
 ## Data Cleaning
@@ -64,7 +66,9 @@ The app creates the following features:
 
 ## ML Approach
 
-The machine learning section predicts `high_engagement`.
+The machine learning section classifies `high_engagement`, where a video is labeled 1 when its engagement rate is above the median.
+
+This is not a pre-upload or pre-trending prediction model because the current features include post-publication metrics such as views, likes, and comments. To build a true trending predictor, the dataset would need both trending and non-trending videos plus pre-publication or early-publication features.
 
 Models used:
 
@@ -127,7 +131,7 @@ Overview dashboard:
 
 ![Overview dashboard](screenshots/overview-dashboard.png)
 
-Machine learning prediction tab:
+Machine learning classification tab:
 
 ![ML prediction tab](screenshots/ml-prediction.png)
 
@@ -138,7 +142,8 @@ Machine learning prediction tab:
 - Use time-series analysis for trending patterns over time.
 - Deploy the app on Streamlit Community Cloud.
 - Add SHAP or permutation importance for more detailed model explainability.
-- Build a recommendation-style model for predicting high-performing video categories.
+- Add non-trending videos to build a true trending vs non-trending prediction model.
+- Add early-stage features such as first-hour views, first-hour likes, upload time, title text, tags, and channel-level statistics.
 
 ## Portfolio Value
 

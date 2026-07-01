@@ -50,10 +50,15 @@ def format_metric_columns(metric_df: pd.DataFrame, columns: list[str]) -> pd.Dat
 
 df = get_data()
 
-st.title("YouTube Trending Video Analytics & Engagement Prediction")
+st.title("YouTube Trending Video Analytics & Engagement Classification")
 st.caption(
     "An interactive Data Science portfolio project for analyzing Indian YouTube "
-    "trending videos and predicting high-engagement content."
+    "trending videos and classifying high-engagement content."
+)
+st.info(
+    "Model note: this dataset contains videos that already became trending. "
+    "The ML section classifies high vs lower engagement within trending videos; "
+    "it does not predict whether a brand-new video will become trending."
 )
 
 # ------------------ SIDEBAR FILTERS ------------------
@@ -106,7 +111,7 @@ overview_tab, behavior_tab, engagement_insights_tab, ml_tab, ml_insights_tab, da
         "Overview",
         "Engagement Patterns",
         "Engagement Insights",
-        "ML Prediction",
+        "ML Classification",
         "ML Model Insights",
         "Data Preview",
     ]
@@ -389,10 +394,15 @@ with engagement_insights_tab:
     st.plotly_chart(fig_day_engagement, width="stretch")
 
 with ml_tab:
-    st.subheader("High Engagement Prediction")
+    st.subheader("High Engagement Classification")
     st.write(
         "The target variable is `high_engagement`, where a video is labeled 1 when "
         "its engagement rate is above the dataset median."
+    )
+    st.warning(
+        "This is not a pre-publish trend predictor. Features such as views, likes, "
+        "and comments are available only after a video receives audience activity, "
+        "so the model is best understood as an engagement analysis/classification model."
     )
 
     model_results = get_model_results(df, MODEL_CACHE_VERSION)
@@ -443,6 +453,11 @@ with ml_insights_tab:
     st.write(
         "This section compares baseline and ensemble models for predicting whether "
         "a video has above-median engagement."
+    )
+    st.info(
+        "Because the dataset includes only trending videos, ROC-AUC and the other "
+        "metrics measure high-engagement classification inside the trending dataset, "
+        "not real-world trending prediction for new uploads."
     )
 
     model_results = get_model_results(df, MODEL_CACHE_VERSION)
