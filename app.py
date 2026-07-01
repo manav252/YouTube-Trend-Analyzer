@@ -1,121 +1,302 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
-import json
+import streamlit as st
 
-# ------------------ PAGE CONFIG ------------------
-st.set_page_config(page_title="YouTube Dashboard", layout="wide")
+from src.data_processing import load_clean_featured_data
+from src.ml_model import train_engagement_models
 
-st.title("📊 YouTube Trending Dashboard (India)")
 
-# ------------------ LOAD DATA ------------------
-@st.cache_data
-def load_data():
-    # Read CSV (must be in same folder)
-    df = pd.read_csv("INvideos_small.csv")
-
-    # Preprocessing
-    df["publish_time"] = pd.to_datetime(df["publish_time"])
-    df["publishing_hour"] = df["publish_time"].dt.hour
-    df["publishing_day"] = df["publish_time"].dt.day_name()
-    df["year"] = df["trending_date"].apply(lambda x: '20' + x[:2])
-
-    df["description"] = df["description"].fillna("")
-
-    # Load category mapping
-    with open("/Users/manavdoshi/IN_category_id.json") as f:
-        data = json.load(f)
-
-    cat_dict = {int(item["id"]): item["snippet"]["title"] for item in data["items"]}
-    df["category_name"] = df["category_id"].map(cat_dict)
-
-    return df  # ✅ correctly inside function
-
-# Load data
-df = load_data()
-
-# ------------------ SIDEBAR ------------------
-st.sidebar.header("🔍 Filters")
-
-category = st.sidebar.multiselect(
-    "Category",
-    df["category_name"].dropna().unique(),
-    default=df["category_name"].dropna().unique()
+st.set_page_config(
+    page_title="YouTube Trending Analytics",
+    page_icon="📊",
+    layout="wide",
 )
 
-year = st.sidebar.multiselect(
-    "Year",
-    df["year"].unique(),
-    default=df["year"].unique()
+
+@st.cache_data
+def get_data() -> pd.DataFrame:
+    """Load cleaned and feature-engineered YouTube trending data."""
+    return load_clean_featured_data()
+
+
+@st.cache_data
+def get_model_results(df: pd.DataFrame) -> dict:
+    """Train engagement prediction models once and reuse the results."""
+    return train_engagement_models(df)
+
+
+def format_number(value: float) -> str:
+    """Show large dashboard numbers in a readable way."""
+    if pd.isna(value):
+        return "0"
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    if value >= 1_000:
+        return f"{value / 1_000:.1f}K"
+    return f"{value:.0f}"
+
+
+df = get_data()
+
+st.title("YouTube Trending Video Analytics & Engagement Prediction")
+st.caption(
+    "An interactive Data Science portfolio project for analyzing Indian YouTube "
+    "trending videos and predicting high-engagement content."
+)
+
+# ------------------ SIDEBAR FILTERS ------------------
+st.sidebar.header("Filters")
+
+selected_categories = st.sidebar.multiselect(
+    "Category",
+    options=sorted(df["category_name"].dropna().unique()),
+    default=sorted(df["category_name"].dropna().unique()),
+)
+
+selected_years = st.sidebar.multiselect(
+    "Trending year",
+    options=sorted(df["year"].dropna().unique()),
+    default=sorted(df["year"].dropna().unique()),
+)
+
+min_views, max_views = int(df["views"].min()), int(df["views"].max())
+selected_view_range = st.sidebar.slider(
+    "Views range",
+    min_value=min_views,
+    max_value=max_views,
+    value=(min_views, max_views),
 )
 
 filtered_df = df[
-    (df["category_name"].isin(category)) &
-    (df["year"].isin(year))
-]
+    (df["category_name"].isin(selected_categories))
+    & (df["year"].isin(selected_years))
+    & (df["views"].between(selected_view_range[0], selected_view_range[1]))
+].copy()
 
-# ------------------ KPIs ------------------
-st.subheader("📌 Key Metrics")
+if filtered_df.empty:
+    st.warning("No videos match the selected filters. Adjust the sidebar filters.")
+    st.stop()
 
-col1, col2, col3 = st.columns(3)
+# ------------------ KPIS ------------------
+total_videos = len(filtered_df)
+average_views = filtered_df["views"].mean()
+average_engagement = filtered_df["engagement_rate"].mean() * 100
+unique_channels = filtered_df["channel_title"].nunique()
 
-col1.metric("Total Videos", len(filtered_df))
-col2.metric("Avg Views", int(filtered_df["views"].mean()))
-col3.metric("Avg Likes", int(filtered_df["likes"].mean()))
+kpi_1, kpi_2, kpi_3, kpi_4 = st.columns(4)
+kpi_1.metric("Trending Videos", format_number(total_videos))
+kpi_2.metric("Average Views", format_number(average_views))
+kpi_3.metric("Avg Engagement Rate", f"{average_engagement:.2f}%")
+kpi_4.metric("Unique Channels", format_number(unique_channels))
 
-# ------------------ CHARTS ------------------
-
-# 📈 Videos per Year
-st.subheader("📈 Videos per Year")
-year_df = filtered_df["year"].value_counts().reset_index()
-year_df.columns = ["year", "count"]
-
-fig1 = px.bar(year_df, x="year", y="count")
-st.plotly_chart(fig1, use_container_width=True)
-
-# 📊 Category Distribution
-st.subheader("📊 Category Distribution")
-cat_df = filtered_df["category_name"].value_counts().reset_index()
-cat_df.columns = ["category", "count"]
-
-fig2 = px.pie(cat_df, names="category", values="count")
-st.plotly_chart(fig2, use_container_width=True)
-
-# ⏰ Publishing Hour
-st.subheader("⏰ Publishing Hour")
-hour_df = filtered_df["publishing_hour"].value_counts().sort_index().reset_index()
-hour_df.columns = ["hour", "count"]
-
-fig3 = px.bar(hour_df, x="hour", y="count")
-st.plotly_chart(fig3, use_container_width=True)
-
-# 📅 Publishing Day
-st.subheader("📅 Publishing Day")
-day_df = filtered_df["publishing_day"].value_counts().reset_index()
-day_df.columns = ["day", "count"]
-
-fig4 = px.bar(day_df, x="day", y="count")
-st.plotly_chart(fig4, use_container_width=True)
-
-# 🔥 Top Channels
-st.subheader("🔥 Top Channels")
-top_channels = (
-    filtered_df.groupby("channel_title")
-    .size()
-    .reset_index(name="count")
-    .sort_values("count", ascending=False)
-    .head(10)
+overview_tab, behavior_tab, ml_tab, data_tab = st.tabs(
+    ["Overview", "Engagement Patterns", "ML Prediction", "Data Preview"]
 )
 
-fig5 = px.bar(top_channels, x="count", y="channel_title", orientation="h")
-st.plotly_chart(fig5, use_container_width=True)
+with overview_tab:
+    left_col, right_col = st.columns(2)
 
-# 🔥 Top Videos
-st.subheader("🔥 Top 10 Videos")
-top_videos = filtered_df.sort_values("views", ascending=False).head(10)
+    with left_col:
+        st.subheader("Category-wise Trending Count")
+        category_count = (
+            filtered_df["category_name"]
+            .value_counts()
+            .reset_index(name="trending_count")
+            .rename(columns={"index": "category_name"})
+        )
+        fig_category = px.bar(
+            category_count,
+            x="trending_count",
+            y="category_name",
+            orientation="h",
+            color="trending_count",
+            color_continuous_scale="Blues",
+            labels={
+                "trending_count": "Trending videos",
+                "category_name": "Category",
+            },
+        )
+        fig_category.update_layout(yaxis={"categoryorder": "total ascending"})
+        st.plotly_chart(fig_category, use_container_width=True)
 
-st.dataframe(top_videos[["title", "channel_title", "views", "likes"]])
+    with right_col:
+        st.subheader("Views Distribution")
+        fig_views = px.histogram(
+            filtered_df,
+            x="views",
+            nbins=60,
+            log_y=True,
+            labels={"views": "Views", "count": "Video count"},
+            title="Log-scaled distribution highlights the long-tail of viral videos",
+        )
+        st.plotly_chart(fig_views, use_container_width=True)
 
-# 📄 Raw Data
-with st.expander("📄 Show Raw Data"):
-    st.dataframe(filtered_df)
+    st.subheader("Top Channels by Trending Count")
+    top_channels = (
+        filtered_df.groupby("channel_title", as_index=False)
+        .agg(trending_count=("video_id", "count"), avg_views=("views", "mean"))
+        .sort_values("trending_count", ascending=False)
+        .head(15)
+    )
+    fig_channels = px.bar(
+        top_channels,
+        x="trending_count",
+        y="channel_title",
+        orientation="h",
+        color="avg_views",
+        color_continuous_scale="Viridis",
+        labels={
+            "trending_count": "Trending videos",
+            "channel_title": "Channel",
+            "avg_views": "Average views",
+        },
+    )
+    fig_channels.update_layout(yaxis={"categoryorder": "total ascending"})
+    st.plotly_chart(fig_channels, use_container_width=True)
+
+with behavior_tab:
+    left_col, right_col = st.columns(2)
+
+    with left_col:
+        st.subheader("Engagement by Category")
+        category_engagement = (
+            filtered_df.groupby("category_name", as_index=False)
+            .agg(
+                avg_engagement_rate=("engagement_rate", "mean"),
+                avg_like_ratio=("like_ratio", "mean"),
+                avg_comment_ratio=("comment_ratio", "mean"),
+            )
+            .sort_values("avg_engagement_rate", ascending=False)
+        )
+        fig_engagement = px.bar(
+            category_engagement,
+            x="avg_engagement_rate",
+            y="category_name",
+            orientation="h",
+            color="avg_engagement_rate",
+            color_continuous_scale="Teal",
+            labels={
+                "avg_engagement_rate": "Average engagement rate",
+                "category_name": "Category",
+            },
+        )
+        fig_engagement.update_layout(yaxis={"categoryorder": "total ascending"})
+        st.plotly_chart(fig_engagement, use_container_width=True)
+
+    with right_col:
+        st.subheader("Publish Hour vs Views and Engagement")
+        hourly_performance = (
+            filtered_df.groupby("publish_hour", as_index=False)
+            .agg(avg_views=("views", "mean"), avg_engagement=("engagement_rate", "mean"))
+        )
+        fig_hour = px.scatter(
+            hourly_performance,
+            x="publish_hour",
+            y="avg_views",
+            size="avg_engagement",
+            color="avg_engagement",
+            color_continuous_scale="Plasma",
+            labels={
+                "publish_hour": "Publish hour",
+                "avg_views": "Average views",
+                "avg_engagement": "Average engagement rate",
+            },
+        )
+        fig_hour.update_xaxes(dtick=1)
+        st.plotly_chart(fig_hour, use_container_width=True)
+
+    st.subheader("Correlation Heatmap")
+    correlation_columns = [
+        "views",
+        "likes",
+        "dislikes",
+        "comment_count",
+        "title_length",
+        "publish_hour",
+        "engagement_rate",
+        "like_ratio",
+        "comment_ratio",
+    ]
+    corr = filtered_df[correlation_columns].corr()
+    fig_corr = px.imshow(
+        corr,
+        text_auto=".2f",
+        aspect="auto",
+        color_continuous_scale="RdBu_r",
+        zmin=-1,
+        zmax=1,
+    )
+    st.plotly_chart(fig_corr, use_container_width=True)
+
+with ml_tab:
+    st.subheader("High Engagement Prediction")
+    st.write(
+        "The target variable is `high_engagement`, where a video is labeled 1 when "
+        "its engagement rate is above the dataset median."
+    )
+
+    model_results = get_model_results(df)
+
+    metric_table = model_results["metrics"].copy()
+    for column in ["accuracy", "precision", "recall", "f1_score"]:
+        metric_table[column] = metric_table[column].map(lambda value: f"{value:.3f}")
+
+    st.dataframe(metric_table, use_container_width=True, hide_index=True)
+    st.caption(
+        f"Training rows: {model_results['train_rows']:,} | "
+        f"Testing rows: {model_results['test_rows']:,}"
+    )
+
+    left_col, right_col = st.columns(2)
+
+    with left_col:
+        st.subheader("Random Forest Confusion Matrix")
+        confusion_df = pd.DataFrame(
+            model_results["confusion_matrix"],
+            index=["Actual Low", "Actual High"],
+            columns=["Predicted Low", "Predicted High"],
+        )
+        fig_confusion = px.imshow(
+            confusion_df,
+            text_auto=True,
+            color_continuous_scale="Blues",
+            aspect="auto",
+        )
+        st.plotly_chart(fig_confusion, use_container_width=True)
+
+    with right_col:
+        st.subheader("Random Forest Feature Importance")
+        fig_importance = px.bar(
+            model_results["feature_importance"],
+            x="importance",
+            y="feature",
+            orientation="h",
+            color="importance",
+            color_continuous_scale="Greens",
+        )
+        fig_importance.update_layout(yaxis={"categoryorder": "total ascending"})
+        st.plotly_chart(fig_importance, use_container_width=True)
+
+with data_tab:
+    st.subheader("Top Trending Videos")
+    top_videos = filtered_df.sort_values("views", ascending=False).head(20)
+    st.dataframe(
+        top_videos[
+            [
+                "title",
+                "channel_title",
+                "category_name",
+                "views",
+                "likes",
+                "comment_count",
+                "engagement_rate",
+                "publish_day",
+                "publish_hour",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    with st.expander("Show cleaned dataset"):
+        st.dataframe(filtered_df, use_container_width=True)
