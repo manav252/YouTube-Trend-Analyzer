@@ -7,6 +7,8 @@ from sklearn.metrics import (
     f1_score,
     precision_score,
     recall_score,
+    roc_auc_score,
+    roc_curve,
 )
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -25,7 +27,7 @@ FEATURE_COLUMNS = [
 ]
 
 
-def _score_model(model_name: str, y_true, y_pred) -> dict:
+def _score_model(model_name: str, y_true, y_pred, y_probability) -> dict:
     """Return a simple metric dictionary for Streamlit display."""
     return {
         "model": model_name,
@@ -33,6 +35,7 @@ def _score_model(model_name: str, y_true, y_pred) -> dict:
         "precision": precision_score(y_true, y_pred, zero_division=0),
         "recall": recall_score(y_true, y_pred, zero_division=0),
         "f1_score": f1_score(y_true, y_pred, zero_division=0),
+        "roc_auc": roc_auc_score(y_true, y_probability),
     }
 
 
@@ -62,15 +65,48 @@ def train_engagement_models(df: pd.DataFrame) -> dict:
 
     logistic_predictions = logistic_model.predict(X_test)
     forest_predictions = random_forest_model.predict(X_test)
+    logistic_probabilities = logistic_model.predict_proba(X_test)[:, 1]
+    forest_probabilities = random_forest_model.predict_proba(X_test)[:, 1]
 
     metrics = pd.DataFrame(
         [
-            _score_model("Logistic Regression", y_test, logistic_predictions),
-            _score_model("Random Forest", y_test, forest_predictions),
+            _score_model(
+                "Logistic Regression",
+                y_test,
+                logistic_predictions,
+                logistic_probabilities,
+            ),
+            _score_model(
+                "Random Forest",
+                y_test,
+                forest_predictions,
+                forest_probabilities,
+            ),
         ]
     )
 
     confusion = confusion_matrix(y_test, forest_predictions)
+    logistic_fpr, logistic_tpr, _ = roc_curve(y_test, logistic_probabilities)
+    forest_fpr, forest_tpr, _ = roc_curve(y_test, forest_probabilities)
+    roc_curve_data = pd.concat(
+        [
+            pd.DataFrame(
+                {
+                    "false_positive_rate": logistic_fpr,
+                    "true_positive_rate": logistic_tpr,
+                    "model": "Logistic Regression",
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "false_positive_rate": forest_fpr,
+                    "true_positive_rate": forest_tpr,
+                    "model": "Random Forest",
+                }
+            ),
+        ],
+        ignore_index=True,
+    )
     feature_importance = pd.DataFrame(
         {
             "feature": FEATURE_COLUMNS,
@@ -81,6 +117,7 @@ def train_engagement_models(df: pd.DataFrame) -> dict:
     return {
         "metrics": metrics,
         "confusion_matrix": confusion,
+        "roc_curve": roc_curve_data,
         "feature_importance": feature_importance,
         "train_rows": len(X_train),
         "test_rows": len(X_test),

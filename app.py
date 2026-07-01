@@ -89,8 +89,15 @@ kpi_2.metric("Average Views", format_number(average_views))
 kpi_3.metric("Avg Engagement Rate", f"{average_engagement:.2f}%")
 kpi_4.metric("Unique Channels", format_number(unique_channels))
 
-overview_tab, behavior_tab, ml_tab, data_tab = st.tabs(
-    ["Overview", "Engagement Patterns", "ML Prediction", "Data Preview"]
+overview_tab, behavior_tab, engagement_insights_tab, ml_tab, ml_insights_tab, data_tab = st.tabs(
+    [
+        "Overview",
+        "Engagement Patterns",
+        "Engagement Insights",
+        "ML Prediction",
+        "ML Model Insights",
+        "Data Preview",
+    ]
 )
 
 with overview_tab:
@@ -228,6 +235,147 @@ with behavior_tab:
     )
     st.plotly_chart(fig_corr, width="stretch")
 
+with engagement_insights_tab:
+    st.subheader("Engagement Insights")
+    st.write(
+        "This section compares engagement quality across categories and publishing "
+        "times, using ratios instead of only raw views."
+    )
+
+    category_ratio_summary = (
+        filtered_df.groupby("category_name", as_index=False)
+        .agg(
+            engagement_rate=("engagement_rate", "mean"),
+            like_ratio=("like_ratio", "mean"),
+            comment_ratio=("comment_ratio", "mean"),
+            trending_videos=("video_id", "count"),
+        )
+        .sort_values("engagement_rate", ascending=False)
+    )
+
+    insight_col_1, insight_col_2 = st.columns(2)
+
+    with insight_col_1:
+        st.subheader("Engagement Rate by Category")
+        fig_engagement_rate_category = px.bar(
+            category_ratio_summary,
+            x="engagement_rate",
+            y="category_name",
+            orientation="h",
+            color="engagement_rate",
+            color_continuous_scale="Teal",
+            hover_data=["trending_videos"],
+            labels={
+                "engagement_rate": "Avg engagement rate",
+                "category_name": "Category",
+                "trending_videos": "Trending videos",
+            },
+        )
+        fig_engagement_rate_category.update_layout(
+            yaxis={"categoryorder": "total ascending"}
+        )
+        st.plotly_chart(fig_engagement_rate_category, width="stretch")
+
+    with insight_col_2:
+        st.subheader("Like Ratio by Category")
+        fig_like_ratio_category = px.bar(
+            category_ratio_summary.sort_values("like_ratio", ascending=False),
+            x="like_ratio",
+            y="category_name",
+            orientation="h",
+            color="like_ratio",
+            color_continuous_scale="Blues",
+            hover_data=["trending_videos"],
+            labels={
+                "like_ratio": "Avg like ratio",
+                "category_name": "Category",
+                "trending_videos": "Trending videos",
+            },
+        )
+        fig_like_ratio_category.update_layout(yaxis={"categoryorder": "total ascending"})
+        st.plotly_chart(fig_like_ratio_category, width="stretch")
+
+    insight_col_3, insight_col_4 = st.columns(2)
+
+    with insight_col_3:
+        st.subheader("Comment Ratio by Category")
+        fig_comment_ratio_category = px.bar(
+            category_ratio_summary.sort_values("comment_ratio", ascending=False),
+            x="comment_ratio",
+            y="category_name",
+            orientation="h",
+            color="comment_ratio",
+            color_continuous_scale="Purples",
+            hover_data=["trending_videos"],
+            labels={
+                "comment_ratio": "Avg comment ratio",
+                "category_name": "Category",
+                "trending_videos": "Trending videos",
+            },
+        )
+        fig_comment_ratio_category.update_layout(
+            yaxis={"categoryorder": "total ascending"}
+        )
+        st.plotly_chart(fig_comment_ratio_category, width="stretch")
+
+    with insight_col_4:
+        st.subheader("Publish Hour vs Engagement Rate")
+        hourly_engagement = (
+            filtered_df.groupby("publish_hour", as_index=False)
+            .agg(
+                engagement_rate=("engagement_rate", "mean"),
+                trending_videos=("video_id", "count"),
+            )
+            .sort_values("publish_hour")
+        )
+        fig_hour_engagement = px.line(
+            hourly_engagement,
+            x="publish_hour",
+            y="engagement_rate",
+            markers=True,
+            labels={
+                "publish_hour": "Publish hour",
+                "engagement_rate": "Avg engagement rate",
+            },
+            hover_data=["trending_videos"],
+        )
+        fig_hour_engagement.update_xaxes(dtick=1)
+        st.plotly_chart(fig_hour_engagement, width="stretch")
+
+    st.subheader("Publish Day vs Engagement Rate")
+    day_order = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+        "Unknown",
+    ]
+    daily_engagement = (
+        filtered_df.groupby("publish_day", as_index=False)
+        .agg(
+            engagement_rate=("engagement_rate", "mean"),
+            trending_videos=("video_id", "count"),
+        )
+        .sort_values("engagement_rate", ascending=False)
+    )
+    fig_day_engagement = px.bar(
+        daily_engagement,
+        x="publish_day",
+        y="engagement_rate",
+        color="engagement_rate",
+        color_continuous_scale="Viridis",
+        category_orders={"publish_day": day_order},
+        labels={
+            "publish_day": "Publish day",
+            "engagement_rate": "Avg engagement rate",
+        },
+        hover_data=["trending_videos"],
+    )
+    st.plotly_chart(fig_day_engagement, width="stretch")
+
 with ml_tab:
     st.subheader("High Engagement Prediction")
     st.write(
@@ -238,7 +386,7 @@ with ml_tab:
     model_results = get_model_results(df)
 
     metric_table = model_results["metrics"].copy()
-    for column in ["accuracy", "precision", "recall", "f1_score"]:
+    for column in ["accuracy", "precision", "recall", "f1_score", "roc_auc"]:
         metric_table[column] = metric_table[column].map(lambda value: f"{value:.3f}")
 
     st.dataframe(metric_table, width="stretch", hide_index=True)
@@ -276,6 +424,90 @@ with ml_tab:
         )
         fig_importance.update_layout(yaxis={"categoryorder": "total ascending"})
         st.plotly_chart(fig_importance, width="stretch")
+
+with ml_insights_tab:
+    st.subheader("ML Model Insights")
+    st.write(
+        "This section compares baseline and ensemble models for predicting whether "
+        "a video has above-median engagement."
+    )
+
+    model_results = get_model_results(df)
+    model_comparison = model_results["metrics"].copy()
+    model_comparison = model_comparison.rename(
+        columns={
+            "model": "Model",
+            "accuracy": "Accuracy",
+            "precision": "Precision",
+            "recall": "Recall",
+            "f1_score": "F1-score",
+            "roc_auc": "ROC-AUC",
+        }
+    )
+    for column in ["Accuracy", "Precision", "Recall", "F1-score", "ROC-AUC"]:
+        model_comparison[column] = model_comparison[column].map(lambda value: f"{value:.3f}")
+
+    st.subheader("Logistic Regression vs Random Forest")
+    st.dataframe(model_comparison, width="stretch", hide_index=True)
+    st.caption(
+        f"Training rows: {model_results['train_rows']:,} | "
+        f"Testing rows: {model_results['test_rows']:,}"
+    )
+
+    ml_col_1, ml_col_2 = st.columns(2)
+
+    with ml_col_1:
+        st.subheader("Confusion Matrix")
+        confusion_df = pd.DataFrame(
+            model_results["confusion_matrix"],
+            index=["Actual Low", "Actual High"],
+            columns=["Predicted Low", "Predicted High"],
+        )
+        fig_ml_confusion = px.imshow(
+            confusion_df,
+            text_auto=True,
+            color_continuous_scale="Blues",
+            aspect="auto",
+            labels={"color": "Videos"},
+        )
+        st.plotly_chart(fig_ml_confusion, width="stretch")
+
+    with ml_col_2:
+        st.subheader("ROC Curve")
+        fig_roc = px.line(
+            model_results["roc_curve"],
+            x="false_positive_rate",
+            y="true_positive_rate",
+            color="model",
+            labels={
+                "false_positive_rate": "False positive rate",
+                "true_positive_rate": "True positive rate",
+                "model": "Model",
+            },
+        )
+        fig_roc.add_shape(
+            type="line",
+            x0=0,
+            y0=0,
+            x1=1,
+            y1=1,
+            line={"dash": "dash", "color": "gray"},
+        )
+        fig_roc.update_layout(legend_title_text="Model")
+        st.plotly_chart(fig_roc, width="stretch")
+
+    st.subheader("Random Forest Feature Importance")
+    fig_ml_importance = px.bar(
+        model_results["feature_importance"],
+        x="importance",
+        y="feature",
+        orientation="h",
+        color="importance",
+        color_continuous_scale="Greens",
+        labels={"importance": "Importance", "feature": "Feature"},
+    )
+    fig_ml_importance.update_layout(yaxis={"categoryorder": "total ascending"})
+    st.plotly_chart(fig_ml_importance, width="stretch")
 
 with data_tab:
     st.subheader("Top Trending Videos")
