@@ -6,6 +6,9 @@ from src.data_processing import load_clean_featured_data
 from src.ml_model import train_engagement_models
 
 
+MODEL_CACHE_VERSION = "engagement-model-v2"
+
+
 st.set_page_config(
     page_title="YouTube Trending Analytics",
     page_icon="📊",
@@ -20,7 +23,7 @@ def get_data() -> pd.DataFrame:
 
 
 @st.cache_data
-def get_model_results(df: pd.DataFrame) -> dict:
+def get_model_results(df: pd.DataFrame, cache_version: str) -> dict:
     """Train engagement prediction models once and reuse the results."""
     return train_engagement_models(df)
 
@@ -34,6 +37,15 @@ def format_number(value: float) -> str:
     if value >= 1_000:
         return f"{value / 1_000:.1f}K"
     return f"{value:.0f}"
+
+
+def format_metric_columns(metric_df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Format model metrics without crashing on older cached result shapes."""
+    formatted_df = metric_df.copy()
+    for column in columns:
+        if column in formatted_df.columns:
+            formatted_df[column] = formatted_df[column].map(lambda value: f"{value:.3f}")
+    return formatted_df
 
 
 df = get_data()
@@ -383,11 +395,12 @@ with ml_tab:
         "its engagement rate is above the dataset median."
     )
 
-    model_results = get_model_results(df)
+    model_results = get_model_results(df, MODEL_CACHE_VERSION)
 
     metric_table = model_results["metrics"].copy()
-    for column in ["accuracy", "precision", "recall", "f1_score", "roc_auc"]:
-        metric_table[column] = metric_table[column].map(lambda value: f"{value:.3f}")
+    metric_table = format_metric_columns(
+        metric_table, ["accuracy", "precision", "recall", "f1_score", "roc_auc"]
+    )
 
     st.dataframe(metric_table, width="stretch", hide_index=True)
     st.caption(
@@ -432,7 +445,7 @@ with ml_insights_tab:
         "a video has above-median engagement."
     )
 
-    model_results = get_model_results(df)
+    model_results = get_model_results(df, MODEL_CACHE_VERSION)
     model_comparison = model_results["metrics"].copy()
     model_comparison = model_comparison.rename(
         columns={
@@ -444,8 +457,9 @@ with ml_insights_tab:
             "roc_auc": "ROC-AUC",
         }
     )
-    for column in ["Accuracy", "Precision", "Recall", "F1-score", "ROC-AUC"]:
-        model_comparison[column] = model_comparison[column].map(lambda value: f"{value:.3f}")
+    model_comparison = format_metric_columns(
+        model_comparison, ["Accuracy", "Precision", "Recall", "F1-score", "ROC-AUC"]
+    )
 
     st.subheader("Logistic Regression vs Random Forest")
     st.dataframe(model_comparison, width="stretch", hide_index=True)
