@@ -73,6 +73,8 @@ The app creates the following features:
 - Publishing hour can be used as an additional behavioral feature, but engagement is usually driven more by category and audience response.
 - Random Forest provides interpretable feature importance for understanding which metrics contribute most to high engagement.
 
+More details are available in [`reports/insights.md`](reports/insights.md).
+
 ## ML Approach
 
 The machine learning section classifies `high_engagement`, where a video is labeled 1 when its engagement rate is above the median.
@@ -109,6 +111,7 @@ Metrics shown in the app:
 │   └── youtube_trend_analyser.py
 ├── reports/
 │   ├── model_evaluation.md
+│   ├── insights.md
 │   ├── powerbi_dashboard_plan.md
 │   ├── powerbi_dax_measures.md
 │   └── youtube_powerbi_ready_cleaned.csv
